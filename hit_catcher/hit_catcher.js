@@ -167,6 +167,20 @@ function saveHitCatcher() {
     });
 }
 
+function selectAll() {
+    const select = $('#select-all').html() === 'Select All';
+    $('.watcher').each(function() {
+        const watcher = $(this)[0];
+        if (watcher) {
+            if (select && !watcher.matches(`.selected`))
+                watcher.classList.add(`selected`);
+            else if (!select && watcher.matches(`.selected`))
+                watcher.classList.remove(`selected`);
+        }
+    });
+    $('#select-all').html(select ? 'Deselect All' : 'Select All');
+}
+
 function addWatcher() {
     bootbox.prompt({
         title: `Add watcher by Groupd Id, Preview URL or Accept URL`,
@@ -677,6 +691,7 @@ async function textToSpeech(phrase) {
 
 document.getElementById(`pause`).addEventListener(`click`, catcherPauseToggle);
 document.getElementById(`add-watcher`).addEventListener(`click`, addWatcher);
+document.getElementById(`select-all`).addEventListener(`click`, selectAll);
 
 document.addEventListener(`click`, (event) => {
     const element = event.target;
