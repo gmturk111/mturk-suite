@@ -16,14 +16,15 @@ let finderTimeout = null;
 
 const storage = {};
 
-chrome.storage.local.get([`hitFinder`, `blockList`, `includeList`, `reviews`], (keys) => {
+chrome.storage.local.get([`hitFinder`, `blockList`, `includeList`, `reviews`, `requesters`], (keys) => {
   for (const key of Object.keys(keys)) {
     storage[key] = keys[key];
   }
-
+  
   finderUpdate();
   blockListUpdate();
   includeListUpdate();
+  requestersUpdate();
 });
 
 function finderApply() {
@@ -307,6 +308,7 @@ function finderProcess() {
       once.dataset.key = hit.hit_set_id;
       once.dataset.name = `once`;
       once.textContent = `O`;
+      once.title = 'Catch Once';
       hitCatcherContainer.appendChild(once);
 
       const panda = document.createElement(`button`);
@@ -315,7 +317,17 @@ function finderProcess() {
       panda.dataset.key = hit.hit_set_id;
       panda.dataset.name = `panda`;
       panda.textContent = `P`;
+      panda.title = 'Catch Panda';
       hitCatcherContainer.appendChild(panda);
+      
+      const all = document.createElement(`button`);
+      all.type = `button`;
+      all.className = `btn btn-sm btn-primary px-2 py-0 catch-all`;
+      all.dataset.key = hit.hit_set_id;
+      all.dataset.name = `all`;
+      all.textContent = `A`;
+      all.title = 'Catch all from this Requester';
+      hitCatcherContainer.appendChild(all);
 
       const recentRow = toggleColumns(row.cloneNode(true), `recent`);
       recentRow.id = `recent-${hit.hit_set_id}`;
@@ -342,6 +354,9 @@ function finderProcess() {
         document.getElementById(`include-list-hits-card`).style.display = ``;
         includedFragment.appendChild(includedRow);
       }
+      
+      if (storage.requesters !== undefined && storage.requesters[hit.requester_name] !== undefined)
+        catchRequester(hit);
     }
 
     toggleColumns(document.getElementById(`recent-hits-thead`).children[0], `recent`);
@@ -648,6 +663,44 @@ function includeListUpdate() {
 
   chrome.storage.local.set({
     includeList: storage.includeList,
+  });
+}
+
+function requestersUpdate() {
+  const sorted = Object.keys(storage.requesters)
+    .map((currentValue) => {
+      storage.requesters[currentValue].match = currentValue;
+      return storage.requesters[currentValue];
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, `en`, { numeric: true }));
+
+  const body = document.getElementById(`requesters-modal`).getElementsByClassName(`modal-body`)[0];
+
+  while (body.firstChild) {
+    body.removeChild(body.firstChild);
+  }
+  
+  body.appendChild(
+    (() => {
+      const fragment = document.createDocumentFragment();
+
+      for (const il of sorted) {
+        const button = document.createElement(`button`);
+        button.type = `button`;
+        button.className = `btn btn-sm btn-success ml-1 my-1 il-btn`;
+        button.textContent = il.name;
+        button.dataset.toggle = `modal`;
+        button.dataset.target = `#requesters-edit-modal`;
+        button.dataset.key = il.name;
+        fragment.appendChild(button);
+      }
+
+      return fragment;
+    })(),
+  );
+
+  chrome.storage.local.set({
+    requesters: storage.requesters,
   });
 }
 
@@ -997,6 +1050,80 @@ $(`body`).on(`click`, `.hit-catcher`, async (event) => {
   }
 });
 
+$(`body`).on(`click`, `.catch-all`, async (event) => {
+
+  const key = event.target.dataset.key;
+  const hit = finderDB[key];
+
+  addRequester(hit.requester_name);
+
+  const opened = await new Promise(resolve =>
+    chrome.runtime.sendMessage({ hitCatcher: `open` }, (open) => {
+      const err = chrome.runtime.lastError;
+      if (err) {
+        alert(`Hit Catcher does not appear to be running.`);
+      } else {
+        resolve(open);
+      }
+    })
+  );
+  
+  if (!opened) return;
+  
+  for (const aKey in finderDB)
+  {
+    const aHit = finderDB[aKey];
+    if (aHit.requester_name === hit.requester_name)
+    {
+        catchRequester(aHit);
+    }
+  }
+});
+
+function catchRequester(hit)
+{
+    chrome.runtime.sendMessage({
+      hitCatcher: {
+        id: hit.hit_set_id,
+        name: ``,
+        once: 1,
+        sound: 1,
+        project: {
+          requester_name: hit.requester_name,
+          requester_id: hit.requester_id,
+          title: hit.title,
+          hit_set_id: hit.hit_set_id,
+          monetary_reward: {
+            amount_in_dollars: hit.monetary_reward.amount_in_dollars
+          },
+          assignment_duration_in_seconds: hit.assignment_duration_in_seconds,
+          project_requirements: hit.project_requirements
+        }
+      }
+    });
+    
+    const elem = 1;
+
+    const includedRow = document.getElementById(`included-${hit.hit_set_id}`);
+    if (includedRow) {
+      includedRow.children[7].firstChild.children[elem].classList
+        .replace(`btn-primary`, `btn-secondary`);
+    }
+
+    const recentRow = document.getElementById(`recent-${hit.hit_set_id}`);
+    if (recentRow)
+    {
+      recentRow.children[7].firstChild.children[elem].classList
+        .replace(`btn-primary`, `btn-secondary`);
+    }
+
+    const loggedClassList = document.getElementById(`logged-${hit.hit_set_id}`);
+    if (loggedClassList) {
+      loggedClassList.children[7].firstChild.children[elem].classList
+        .replace(`btn-primary`, `btn-secondary`);
+    }
+}
+
 $(`#block-list-add-modal`).on(`show.bs.modal`, (event) => {
   const name = event.relatedTarget.dataset.name;
   const match = event.relatedTarget.dataset.match;
@@ -1030,6 +1157,12 @@ $(`#include-list-add-modal`).on(`show.bs.modal`, (event) => {
   document.getElementById(`include-list-add-pushbullet`).checked = false;
 });
 
+$(`#requesters-add-modal`).on(`show.bs.modal`, (event) => {
+  const name = event.relatedTarget.dataset.name;
+
+  document.getElementById(`requesters-add-name`).value = name || ``;
+});
+
 $(`#include-list-edit-modal`).on(`show.bs.modal`, (event) => {
   const key = event.relatedTarget.dataset.key;
   const item = storage.includeList[key];
@@ -1045,7 +1178,16 @@ $(`#include-list-edit-modal`).on(`show.bs.modal`, (event) => {
   document.getElementById(`include-list-edit-delete`).dataset.key = key;
 });
 
-$(`#settngs-modal`).on(`show.bs.modal`, (event) => {
+$(`#requesters-edit-modal`).on(`show.bs.modal`, (event) => {
+  const key = event.relatedTarget.dataset.key;
+  const item = storage.requesters[key];
+
+  document.getElementById(`requesters-edit-name`).value = item.name;
+
+  document.getElementById(`requesters-edit-delete`).dataset.key = key;
+});
+
+$(`#settings-modal`).on(`show.bs.modal`, (event) => {
   for (const prop in storage.hitFinder) {
     document.getElementById(prop)[typeof storage.hitFinder[prop] === `boolean` ? `checked` : `value`] =
       storage.hitFinder[prop];
@@ -1320,6 +1462,15 @@ document.getElementById(`include-list-delete`).addEventListener(`click`, (event)
   }
 });
 
+document.getElementById(`requesters-delete`).addEventListener(`click`, (event) => {
+  const result = window.confirm(`Are you sure you delete your entire list of Requesters?`);
+
+  if (result) {
+    storage.requesters = {};
+    requestersUpdate();
+  }
+});
+
 document.getElementById(`include-list-import`).addEventListener(`change`, async (event) => {
   const json = await loadFromFileJSON(event.target.files[0]);
 
@@ -1365,6 +1516,25 @@ document.getElementById(`include-list-add-save`).addEventListener(`click`, (even
   }
 });
 
+document.getElementById(`requesters-add-save`).addEventListener(`click`, (event) => {
+  const name = document.getElementById(`requesters-add-name`).value;
+  
+  addRequester(name);
+});
+
+function addRequester(name)
+{
+  if (name.length) {
+    if (storage.requesters === undefined)
+        storage.requesters = {};
+      
+    storage.requesters[name] = {
+      name,
+    };
+    requestersUpdate();
+  }
+}
+
 document.getElementById(`include-list-edit-save`).addEventListener(`click`, (event) => {
   const name = document.getElementById(`include-list-edit-name`).value;
   const match = document.getElementById(`include-list-edit-match`).value;
@@ -1384,10 +1554,27 @@ document.getElementById(`include-list-edit-save`).addEventListener(`click`, (eve
   }
 });
 
+document.getElementById(`requesters-edit-save`).addEventListener(`click`, (event) => {
+  const name = document.getElementById(`requesters-edit-name`).value;
+
+  if (name.length) {
+    storage.requesters[name] = {
+      name,
+    };
+    requestersUpdate();
+  }
+});
+
 document.getElementById(`include-list-edit-delete`).addEventListener(`click`, (event) => {
   const key = event.target.dataset.key;
   delete storage.includeList[key];
   includeListUpdate();
+});
+
+document.getElementById(`requesters-edit-delete`).addEventListener(`click`, (event) => {
+  const key = event.target.dataset.key;
+  delete storage.requesters[key];
+  requestersUpdate();
 });
 
 document.getElementById(`settings-apply`).addEventListener(`click`, finderApply);
