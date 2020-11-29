@@ -33,6 +33,7 @@
             </div>
             <button type="button" class="btn btn-sm btn-primary ml-1" data-toggle="modal" data-target="#block-list-modal">Block List</button>
             <button type="button" class="btn btn-sm btn-primary ml-1" data-toggle="modal" data-target="#include-list-modal">Include List</button>
+            <button type="button" class="btn btn-sm btn-primary ml-1" data-toggle="modal" data-target="#requesters-modal">Requesters</button>
             <button type="button" class="btn btn-sm btn-primary ml-1" data-toggle="modal" data-target="#settings-modal">Settings</button>
             <button type="button" class="btn btn-sm btn-success ml-1" data-toggle="modal" data-target="#turkerview-finder-announcement-modal" id="tv-finder-announce"><i class="fa fa-info-circle"></i> TurkerView MTS Announcement!</button>
         </div>
@@ -403,6 +404,67 @@
                 <div class="modal-footer">
                     <button type="button" id="include-list-edit-delete" class="btn btn-danger" data-dismiss="modal">Delete</button>
                     <button type="button" id="include-list-edit-save" class="btn btn-primary" data-dismiss="modal">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Requesters Modal -->
+    <div id="requesters-modal" class="modal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Catch All from Requesters</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="requesters-delete" class="btn btn-danger mr-auto">Delete All</button>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#requesters-add-modal">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>  
+    
+    <!-- Requesters Add Modal -->
+    <div id="requesters-add-modal" class="modal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Requester</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Requester Name</label>
+                        <input type="text" id="requesters-add-name" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="requesters-add-save" class="btn btn-primary" data-dismiss="modal">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>  
+    
+    <!-- Requesters Edit Modal -->
+    <div id="requesters-edit-modal" class="modal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Requester</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Requester Name</label>
+                        <input type="text" id="requesters-edit-name" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="requesters-edit-delete" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                    <button type="button" id="requesters-edit-save" class="btn btn-primary" data-dismiss="modal">Save</button>
                 </div>
             </div>
         </div>
