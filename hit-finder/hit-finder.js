@@ -1086,8 +1086,8 @@ function catchRequester(hit)
       hitCatcher: {
         id: hit.hit_set_id,
         name: ``,
-        once: 1,
-        sound: 1,
+        once: true,
+        sound: true,
         project: {
           requester_name: hit.requester_name,
           requester_id: hit.requester_id,
