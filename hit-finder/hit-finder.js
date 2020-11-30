@@ -355,7 +355,12 @@ function finderProcess() {
         includedFragment.appendChild(includedRow);
       }
       
+      // catch all from requesters
       if (storage.requesters !== undefined && storage.requesters[hit.requester_name] !== undefined)
+        catchRequester(hit);
+    
+      // catch all above $ threshold
+      if (autoCatchThreshold && hit.monetary_reward.amount_in_dollars >= autoCatchThreshold)
         catchRequester(hit);
     }
 
@@ -1672,3 +1677,12 @@ document.getElementById(`hit-export-mturkcrowd`).addEventListener(`click`, (even
     });
   }
 });
+
+var autoCatchThreshold = null;
+
+document.getElementById(`auto-catch`).addEventListener(`blur`, (event) => {
+    autoCatchThreshold = $('#auto-catch').val();
+    if (!$.isNumeric(autoCatchThreshold))
+        autoCatchThreshold = null;
+});
+
